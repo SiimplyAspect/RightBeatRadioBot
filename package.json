@@ -1,120 +1,88 @@
 {
-  "name": "mongoose",
-  "description": "Mongoose MongoDB ODM",
-  "version": "6.2.8",
-  "author": "Guillermo Rauch <guillermo@learnboost.com>",
-  "keywords": [
-    "mongodb",
-    "document",
-    "model",
-    "schema",
-    "database",
-    "odm",
-    "data",
-    "datastore",
-    "query",
-    "nosql",
-    "orm",
-    "db"
-  ],
-  "license": "MIT",
-  "dependencies": {
-    "bson": "^4.2.2",
-    "kareem": "2.3.4",
-    "mongodb": "4.3.1",
-    "mpath": "0.8.4",
-    "mquery": "4.0.2",
-    "ms": "2.1.3",
-    "sift": "16.0.0"
-  },
-  "devDependencies": {
-    "@babel/core": "7.17.5",
-    "@babel/preset-env": "7.16.11",
-    "@typescript-eslint/eslint-plugin": "5.12.0",
-    "@typescript-eslint/parser": "5.12.0",
-    "acquit": "1.x",
-    "acquit-ignore": "0.2.x",
-    "acquit-require": "0.1.x",
-    "axios": "0.26.1",
-    "babel-loader": "8.2.3",
-    "benchmark": "2.1.4",
-    "bluebird": "3.7.2",
-    "cheerio": "1.0.0-rc.10",
-    "dox": "0.3.1",
-    "eslint": "8.9.0",
-    "eslint-plugin-mocha-no-only": "1.1.1",
-    "highlight.js": "9.18.3",
-    "lodash.isequal": "4.5.0",
-    "lodash.isequalwith": "4.4.0",
-    "marked": "2.1.3",
-    "mocha": "9.2.1",
-    "moment": "2.x",
-    "mongodb-memory-server": "^8.3.0",
-    "nyc": "^15.1.0",
-    "pug": "3.0.2",
-    "q": "1.5.1",
-    "serve-handler": "6.1.3",
-    "tsd": "0.19.1",
-    "typescript": "4.5.5",
-    "uuid": "8.3.2",
-    "webpack": "4.44.1"
-  },
-  "directories": {
-    "lib": "./lib/mongoose"
-  },
+  "name": "discord.js",
+  "version": "13.6.0",
+  "description": "A powerful library for interacting with the Discord API",
   "scripts": {
-    "lint": "eslint .",
-    "build-browser": "node build-browser.js",
-    "prepublishOnly": "npm run build-browser",
-    "release": "git pull && git push origin master --tags && npm publish",
-    "release-legacy": "git pull origin 5.x && git push origin 5.x --tags && npm publish --tag legacy",
-    "mongo": "node ./tools/repl.js",
-    "test": "mocha --exit ./test/*.test.js",
-    "test-tsd": "tsd",
-    "tdd": "mocha ./test/*.test.js ./test/typescript/main.test.js --inspect --watch --recursive --watch-files ./**/*.js",
-    "test-coverage": "nyc --reporter=html --reporter=text npm test"
+    "test": "npm run lint && npm run docs:test && npm run lint:typings && npm run test:typescript",
+    "test:typescript": "tsc --noEmit && tsd",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "lint:typings": "tslint typings/index.d.ts",
+    "format": "prettier --write src/**/*.js typings/**/*.ts",
+    "prepare": "is-ci || husky install",
+    "docs": "docgen --source src --custom docs/index.yml --output docs/docs.json",
+    "docs:test": "docgen --source src --custom docs/index.yml",
+    "prepublishOnly": "npm run test",
+    "changelog": "git cliff --prepend CHANGELOG.md -l"
   },
-  "main": "./index.js",
-  "types": "./types/index.d.ts",
-  "engines": {
-    "node": ">=12.0.0"
+  "main": "./src/index.js",
+  "types": "./typings/index.d.ts",
+  "files": [
+    "src",
+    "typings"
+  ],
+  "directories": {
+    "lib": "src",
+    "test": "test"
   },
-  "bugs": {
-    "url": "https://github.com/Automattic/mongoose/issues/new"
-  },
+  "contributors": [
+    "Crawl <icrawltogo@gmail.com>",
+    "Amish Shah <amishshah.2k@gmail.com>",
+    "Vlad Frangu <kingdgrizzle@gmail.com>",
+    "SpaceEEC <spaceeec@yahoo.com>",
+    "Antonio Roman <kyradiscord@gmail.com>"
+  ],
+  "license": "Apache-2.0",
+  "keywords": [
+    "discord",
+    "api",
+    "bot",
+    "client",
+    "node",
+    "discordapp"
+  ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/Automattic/mongoose.git"
+    "url": "https://github.com/discordjs/discord.js.git"
   },
-  "homepage": "https://mongoosejs.com",
-  "browser": "./dist/browser.umd.js",
-  "mocha": {
-    "extension": [
-      "test.js"
-    ],
-    "watch-files": [
-      "test/**/*.js"
-    ]
+  "bugs": {
+    "url": "https://github.com/discordjs/discord.js/issues"
   },
-  "config": {
-    "mongodbMemoryServer": {
-      "disablePostinstall": true
-    }
+  "homepage": "https://discord.js.org",
+  "dependencies": {
+    "@discordjs/builders": "^0.11.0",
+    "@discordjs/collection": "^0.4.0",
+    "@sapphire/async-queue": "^1.1.9",
+    "@types/node-fetch": "^2.5.12",
+    "@types/ws": "^8.2.2",
+    "discord-api-types": "^0.26.0",
+    "form-data": "^4.0.0",
+    "node-fetch": "^2.6.1",
+    "ws": "^8.4.0"
   },
-  "funding": {
-    "type": "opencollective",
-    "url": "https://opencollective.com/mongoose"
+  "devDependencies": {
+    "@commitlint/cli": "^16.0.1",
+    "@commitlint/config-angular": "^16.0.0",
+    "@discordjs/docgen": "^0.11.0",
+    "@favware/npm-deprecate": "^1.0.4",
+    "@types/node": "^16.11.12",
+    "conventional-changelog-cli": "^2.2.2",
+    "dtslint": "^4.2.1",
+    "eslint": "^8.5.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-import": "^2.25.3",
+    "eslint-plugin-prettier": "^4.0.0",
+    "husky": "^7.0.4",
+    "is-ci": "^3.0.1",
+    "jest": "^27.4.5",
+    "lint-staged": "^12.1.4",
+    "prettier": "^2.5.1",
+    "tsd": "^0.19.0",
+    "tslint": "^6.1.3",
+    "typescript": "^4.5.4"
   },
-  "tsd": {
-    "directory": "test/types",
-    "compilerOptions": {
-      "esModuleInterop": false,
-      "strict": true,
-      "allowSyntheticDefaultImports": true,
-      "strictPropertyInitialization": false,
-      "noImplicitAny": false,
-      "module": "commonjs",
-      "target": "ES2017"
-    }
+  "engines": {
+    "node": ">=16.6.0",
+    "npm": ">=7.0.0"
   }
 }

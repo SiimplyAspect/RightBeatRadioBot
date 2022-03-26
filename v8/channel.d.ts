@@ -1,76 +1,103 @@
+/**
+ * Types extracted from https://discord.com/developers/docs/resources/channel
+ */
 import type { Permissions, Snowflake } from '../../globals';
-import type { APIActionRowComponent, APIAllowedMentions, APIAttachment, APIChannel, APIEmbed, APIExtendedInvite, APIFollowedChannel, APIMessage, APIMessageReference, APIOverwrite, APIUser, ChannelType, InviteTargetType, MessageFlags, OverwriteType, VideoQualityMode } from '../../payloads/v8/index';
+import type { APIPartialEmoji } from './emoji';
+import type { APIGuildMember } from './guild';
+import type { APIMessageInteraction } from './interactions';
+import type { APIApplication } from './application';
+import type { APIRole } from './permissions';
+import type { APISticker, APIStickerItem } from './sticker';
+import type { APIUser } from './user';
 /**
- * https://discord.com/developers/docs/resources/channel#get-channel
+ * Not documented, but partial only includes id, name, and type
  */
-export declare type RESTGetAPIChannelResult = APIChannel;
-/**
- * https://discord.com/developers/docs/resources/channel#modify-channel
- */
-export interface RESTPatchAPIChannelJSONBody {
+export interface APIPartialChannel {
     /**
-     * 1-100 character channel name
+     * The id of the channel
+     */
+    id: Snowflake;
+    /**
+     * The type of the channel
      *
-     * Channel types: all
+     * See https://discord.com/developers/docs/resources/channel#channel-object-channel-types
+     */
+    type: ChannelType;
+    /**
+     * The name of the channel (2-100 characters)
      */
     name?: string;
+}
+/**
+ * https://discord.com/developers/docs/resources/channel#channel-object-channel-structure
+ */
+export interface APIChannel extends APIPartialChannel {
     /**
-     * The type of channel; only conversion between `text` and `news`
-     * is supported and only in guilds with the "NEWS" feature
-     *
-     * Channel types: text, news
+     * The id of the guild (may be missing for some channel objects received over gateway guild dispatches)
      */
-    type?: ChannelType.GuildNews | ChannelType.GuildText;
+    guild_id?: Snowflake;
     /**
-     * The position of the channel in the left-hand listing
-     *
-     * Channel types: all
+     * Sorting position of the channel
      */
-    position?: number | null;
+    position?: number;
     /**
-     * 0-1024 character channel topic
+     * Explicit permission overwrites for members and roles
      *
-     * Channel types: text, news
+     * See https://discord.com/developers/docs/resources/channel#overwrite-object
+     */
+    permission_overwrites?: APIOverwrite[];
+    /**
+     * The channel topic (0-1024 characters)
      */
     topic?: string | null;
     /**
      * Whether the channel is nsfw
-     *
-     * Channel types: text, news, store
      */
-    nsfw?: boolean | null;
+    nsfw?: boolean;
+    /**
+     * The id of the last message sent in this channel (may not point to an existing or valid message)
+     */
+    last_message_id?: Snowflake | null;
+    /**
+     * The bitrate (in bits) of the voice channel
+     */
+    bitrate?: number;
+    /**
+     * The user limit of the voice channel
+     */
+    user_limit?: number;
     /**
      * Amount of seconds a user has to wait before sending another message (0-21600);
-     * bots, as well as users with the permission `MANAGE_MESSAGES` or `MANAGE_CHANNELS`,
-     * are unaffected
-     *
-     * Channel types: text
+     * bots, as well as users with the permission `MANAGE_MESSAGES` or `MANAGE_CHANNELS`, are unaffected
      */
-    rate_limit_per_user?: number | null;
+    rate_limit_per_user?: number;
     /**
-     * The bitrate (in bits) of the voice channel; 8000 to 96000 (128000 for VIP servers)
+     * The recipients of the DM
      *
-     * Channel types: voice
+     * See https://discord.com/developers/docs/resources/user#user-object
      */
-    bitrate?: number | null;
+    recipients?: APIUser[];
     /**
-     * The user limit of the voice channel; 0 refers to no limit, 1 to 99 refers to a user limit
-     *
-     * Channel types: voice
+     * Icon hash
      */
-    user_limit?: number | null;
+    icon?: string | null;
     /**
-     * Channel or category-specific permissions
-     *
-     * Channel types: all
+     * ID of the DM creator
      */
-    permission_overwrites?: APIOverwrite[] | null;
+    owner_id?: Snowflake;
     /**
-     * ID of the new parent category for a channel
-     *
-     * Channel types: text, news, store, voice
+     * Application id of the group DM creator if it is bot-created
+     */
+    application_id?: Snowflake;
+    /**
+     * ID of the parent category for a channel (each parent category can contain up to 50 channels)
      */
     parent_id?: Snowflake | null;
+    /**
+     * When the last pinned message was pinned.
+     * This may be `null` in events such as `GUILD_CREATE` when a message is not pinned
+     */
+    last_pin_timestamp?: string | null;
     /**
      * Voice region id for the voice or stage channel, automatic when set to `null`
      *
@@ -78,398 +105,932 @@ export interface RESTPatchAPIChannelJSONBody {
      */
     rtc_region?: string | null;
     /**
-     * The camera video quality mode of the voice channel
+     * The camera video quality mode of the voice channel, `1` when not present
      *
      * See https://discord.com/developers/docs/resources/channel#channel-object-video-quality-modes
      */
-    video_quality_mode?: VideoQualityMode | null;
+    video_quality_mode?: VideoQualityMode;
 }
 /**
- * https://discord.com/developers/docs/resources/channel#modify-channel
+ * https://discord.com/developers/docs/resources/channel#channel-object-channel-types
  */
-export declare type RESTPatchAPIChannelResult = APIChannel;
-/**
- * https://discord.com/developers/docs/resources/channel#deleteclose-channel
- */
-export declare type RESTDeleteAPIChannelResult = APIChannel;
-/**
- * https://discord.com/developers/docs/resources/channel#get-channel-messages
- */
-export interface RESTGetAPIChannelMessagesQuery {
+export declare const enum ChannelType {
     /**
-     * Get messages around this message ID
+     * A text channel within a guild
      */
-    around?: Snowflake;
+    GuildText = 0,
     /**
-     * Get messages before this message ID
+     * A direct message between users
      */
-    before?: Snowflake;
+    DM = 1,
     /**
-     * Get messages after this message ID
+     * A voice channel within a guild
      */
-    after?: Snowflake;
+    GuildVoice = 2,
     /**
-     * Max number of messages to return (1-100)
+     * A direct message between multiple users
+     */
+    GroupDM = 3,
+    /**
+     * An organizational category that contains up to 50 channels
      *
-     * @default 50
+     * See https://support.discord.com/hc/en-us/articles/115001580171-Channel-Categories-101
      */
-    limit?: number;
+    GuildCategory = 4,
+    /**
+     * A channel that users can follow and crosspost into their own guild
+     *
+     * See https://support.discord.com/hc/en-us/articles/360032008192
+     */
+    GuildNews = 5,
+    /**
+     * A channel in which game developers can sell their game on Discord
+     *
+     * See https://discord.com/developers/docs/game-and-server-management/special-channels
+     */
+    GuildStore = 6,
+    /**
+     * A voice channel for hosting events with an audience
+     *
+     * See https://support.discord.com/hc/en-us/articles/1500005513722
+     */
+    GuildStageVoice = 13
+}
+export declare const enum VideoQualityMode {
+    /**
+     * Discord chooses the quality for optimal performance
+     */
+    Auto = 1,
+    /**
+     * 720p
+     */
+    Full = 2
 }
 /**
- * https://discord.com/developers/docs/resources/channel#get-channel-messages
+ * https://discord.com/developers/docs/resources/channel#message-object-message-structure
  */
-export declare type RESTGetAPIChannelMessagesResult = APIMessage[];
-/**
- * https://discord.com/developers/docs/resources/channel#get-channel-message
- */
-export declare type RESTGetAPIChannelMessageResult = APIMessage;
-/**
- * https://discord.com/developers/docs/resources/channel#message-object-message-reference-structure
- */
-export declare type APIMessageReferenceSend = Partial<APIMessageReference> & Required<Pick<APIMessageReference, 'message_id'>> & {
+export interface APIMessage {
     /**
-     * Whether to error if the referenced message doesn't exist instead of sending as a normal (non-reply) message
+     * ID of the message
+     */
+    id: Snowflake;
+    /**
+     * ID of the channel the message was sent in
+     */
+    channel_id: Snowflake;
+    /**
+     * ID of the guild the message was sent in
+     */
+    guild_id?: Snowflake;
+    /**
+     * The author of this message (only a valid user in the case where the message is generated by a user or bot user)
      *
-     * @default true
-     */
-    fail_if_not_exists?: boolean;
-};
-/**
- * https://discord.com/developers/docs/resources/channel#create-message
- */
-export interface RESTPostAPIChannelMessageJSONBody {
-    /**
-     * The message contents (up to 2000 characters)
-     */
-    content?: string;
-    /**
-     * A nonce that can be used for optimistic message sending
-     */
-    nonce?: number | string;
-    /**
-     * `true` if this is a TTS message
-     */
-    tts?: boolean;
-    /**
-     * Embedded `rich` content (up to 6000 characters)
+     * If the message is generated by a webhook, the author object corresponds to the webhook's id,
+     * username, and avatar. You can tell if a message is generated by a webhook by checking for the `webhook_id` property
      *
-     * See https://discord.com/developers/docs/resources/channel#embed-object
+     * See https://discord.com/developers/docs/resources/user#user-object
      */
-    embeds?: APIEmbed[];
+    author: APIUser;
     /**
-     * Embedded `rich` content
+     * Member properties for this message's author
      *
-     * See https://discord.com/developers/docs/resources/channel#embed-object
-     */
-    embed?: APIEmbed;
-    /**
-     * Allowed mentions for a message
+     * The member object exists in `MESSAGE_CREATE` and `MESSAGE_UPDATE` events
+     * from text-based guild channels
      *
-     * See https://discord.com/developers/docs/resources/channel#allowed-mentions-object
+     * See https://discord.com/developers/docs/resources/guild#guild-member-object
      */
-    allowed_mentions?: APIAllowedMentions;
+    member?: APIGuildMember;
     /**
-     * Include to make your message a reply
+     * Contents of the message
+     */
+    content: string;
+    /**
+     * When this message was sent
+     */
+    timestamp: string;
+    /**
+     * When this message was edited (or null if never)
+     */
+    edited_timestamp: string | null;
+    /**
+     * Whether this was a TTS message
+     */
+    tts: boolean;
+    /**
+     * Whether this message mentions everyone
+     */
+    mention_everyone: boolean;
+    /**
+     * Users specifically mentioned in the message
      *
-     * See https://discord.com/developers/docs/resources/channel#message-object-message-reference-structure
-     */
-    message_reference?: APIMessageReferenceSend;
-    /**
-     * The components to include with the message
+     * The `member` field is only present in `MESSAGE_CREATE` and `MESSAGE_UPDATE` events
+     * from text-based guild channels
      *
-     * See https://discord.com/developers/docs/interactions/message-components#component-object
+     * See https://discord.com/developers/docs/resources/user#user-object
+     * See https://discord.com/developers/docs/resources/guild#guild-member-object
      */
-    components?: APIActionRowComponent[];
+    mentions: (APIUser & {
+        member?: Omit<APIGuildMember, 'user'>;
+    })[];
     /**
-     * IDs of up to 3 stickers in the server to send in the message
+     * Roles specifically mentioned in this message
      *
-     * See https://discord.com/developers/docs/resources/sticker#sticker-object
+     * See https://discord.com/developers/docs/topics/permissions#role-object
      */
-    sticker_ids?: [Snowflake] | [Snowflake, Snowflake] | [Snowflake, Snowflake, Snowflake];
-}
-/**
- * https://discord.com/developers/docs/resources/channel#create-message
- */
-export declare type RESTPostAPIChannelMessageFormDataBody = {
+    mention_roles: APIRole['id'][];
     /**
-     * JSON stringified message body
-     */
-    payload_json?: string;
-    /**
-     * The file contents
-     */
-    file: unknown;
-} | (RESTPostAPIChannelMessageJSONBody & {
-    /**
-     * The file contents
-     */
-    file: unknown;
-});
-/**
- * https://discord.com/developers/docs/resources/channel#create-message
- */
-export declare type RESTPostAPIChannelMessageResult = APIMessage;
-/**
- * https://discord.com/developers/docs/resources/channel#crosspost-message
- */
-export declare type RESTPostAPIChannelMessageCrosspostResult = APIMessage;
-/**
- * https://discord.com/developers/docs/resources/channel#create-reaction
- */
-export declare type RESTPutAPIChannelMessageReactionResult = never;
-/**
- * https://discord.com/developers/docs/resources/channel#delete-own-reaction
- */
-export declare type RESTDeleteAPIChannelMessageOwnReaction = never;
-/**
- * https://discord.com/developers/docs/resources/channel#delete-user-reaction
- */
-export declare type RESTDeleteAPIChannelMessageUserReactionResult = never;
-export interface RESTGetAPIChannelMessageReactionUsersQuery {
-    /**
-     * Get users after this user ID
-     */
-    after?: Snowflake;
-    /**
-     * Max number of users to return (1-100)
+     * Channels specifically mentioned in this message
      *
-     * @default 25
-     */
-    limit?: number;
-}
-/**
- * https://discord.com/developers/docs/resources/channel#get-reactions
- */
-export declare type RESTGetAPIChannelMessageReactionUsersResult = APIUser[];
-/**
- * https://discord.com/developers/docs/resources/channel#delete-all-reactions
- */
-export declare type RESTDeleteAPIChannelAllMessageReactionsResult = never;
-/**
- * https://discord.com/developers/docs/resources/channel#delete-all-reactions-for-emoji
- */
-export declare type RESTDeleteAPIChannelMessageReactionResult = never;
-/**
- * https://discord.com/developers/docs/resources/channel#edit-message
- */
-export interface RESTPatchAPIChannelMessageJSONBody {
-    /**
-     * The new message contents (up to 2000 characters)
-     */
-    content?: string | null;
-    /**
-     * Embedded `rich` content (up to 6000 characters)
+     * Not all channel mentions in a message will appear in `mention_channels`.
+     * - Only textual channels that are visible to everyone in a lurkable guild will ever be included
+     * - Only crossposted messages (via Channel Following) currently include `mention_channels` at all
      *
-     * See https://discord.com/developers/docs/resources/channel#embed-object
-     */
-    embeds?: APIEmbed[] | null;
-    /**
-     * Embedded `rich` content
+     * If no mentions in the message meet these requirements, this field will not be sent
      *
-     * See https://discord.com/developers/docs/resources/channel#embed-object
-     * @deprecated Use `embeds` instead
+     * See https://discord.com/developers/docs/resources/channel#channel-mention-object
      */
-    embed?: APIEmbed | null;
+    mention_channels?: APIChannelMention[];
     /**
-     * Edit the flags of a message (only `SUPPRESS_EMBEDS` can currently be set/unset)
-     *
-     * When specifying flags, ensure to include all previously set flags/bits
-     * in addition to ones that you are modifying
-     *
-     * See https://discord.com/developers/docs/resources/channel#message-object-message-flags
-     */
-    flags?: MessageFlags | null;
-    /**
-     * Allowed mentions for the message
-     *
-     * See https://discord.com/developers/docs/resources/channel#allowed-mentions-object
-     */
-    allowed_mentions?: APIAllowedMentions | null;
-    /**
-     * Attached files to keep
+     * Any attached files
      *
      * See https://discord.com/developers/docs/resources/channel#attachment-object
      */
-    attachments?: APIAttachment[] | null;
+    attachments: APIAttachment[];
     /**
-     * The components to include with the message
+     * Any embedded content
      *
-     * See https://discord.com/developers/docs/interactions/message-components#component-object
+     * See https://discord.com/developers/docs/resources/channel#embed-object
      */
-    components?: APIActionRowComponent[] | null;
+    embeds: APIEmbed[];
+    /**
+     * Reactions to the message
+     *
+     * See https://discord.com/developers/docs/resources/channel#reaction-object
+     */
+    reactions?: APIReaction[];
+    /**
+     * A nonce that can be used for optimistic message sending (up to 25 characters)
+     *
+     * **You will not receive this from further fetches. This is received only once from a `MESSAGE_CREATE`
+     * event to ensure it got sent**
+     */
+    nonce?: string | number;
+    /**
+     * Whether this message is pinned
+     */
+    pinned: boolean;
+    /**
+     * If the message is generated by a webhook, this is the webhook's id
+     */
+    webhook_id?: Snowflake;
+    /**
+     * Type of message
+     *
+     * See https://discord.com/developers/docs/resources/channel#message-object-message-types
+     */
+    type: MessageType;
+    /**
+     * Sent with Rich Presence-related chat embeds
+     *
+     * See https://discord.com/developers/docs/resources/channel#message-object-message-activity-structure
+     */
+    activity?: APIMessageActivity;
+    /**
+     * Sent with Rich Presence-related chat embeds
+     *
+     * See https://discord.com/developers/docs/resources/channel#message-object-message-application-structure
+     */
+    application?: Partial<APIApplication>;
+    /**
+     * If the message is a response to an Interaction, this is the id of the interaction's application
+     */
+    application_id?: Snowflake;
+    /**
+     * Reference data sent with crossposted messages, replies, pins, and thread starter messages
+     *
+     * See https://discord.com/developers/docs/resources/channel#message-object-message-reference-structure
+     */
+    message_reference?: APIMessageReference;
+    /**
+     * Message flags combined as a bitfield
+     *
+     * See https://discord.com/developers/docs/resources/channel#message-object-message-flags
+     *
+     * See https://en.wikipedia.org/wiki/Bit_field
+     */
+    flags?: MessageFlags;
+    /**
+     * The message associated with the `message_reference`
+     *
+     * This field is only returned for messages with a `type` of `19` (REPLY).
+     *
+     * If the message is a reply but the `referenced_message` field is not present,
+     * the backend did not attempt to fetch the message that was being replied to,
+     * so its state is unknown.
+     *
+     * If the field exists but is `null`, the referenced message was deleted
+     *
+     * See https://discord.com/developers/docs/resources/channel#message-object
+     */
+    referenced_message?: APIMessage | null;
+    /**
+     * Sent if the message is a response to an Interaction
+     */
+    interaction?: APIMessageInteraction;
+    /**
+     * Sent if the message contains components like buttons, action rows, or other interactive components
+     */
+    components?: APIActionRowComponent[];
+    /**
+     * Sent if the message contains stickers
+     *
+     * See https://discord.com/developers/docs/resources/sticker#sticker-item-object
+     */
+    sticker_items?: APIStickerItem[];
+    /**
+     * The stickers sent with the message
+     *
+     * See https://discord.com/developers/docs/resources/sticker#sticker-object
+     * @deprecated Use `sticker_items` instead
+     */
+    stickers?: APISticker[];
 }
 /**
- * https://discord.com/developers/docs/resources/channel#edit-message
+ * https://discord.com/developers/docs/resources/channel#message-object-message-types
  */
-export declare type RESTPatchAPIChannelMessageFormDataBody = {
-    /**
-     * JSON stringified message body
-     */
-    payload_json?: string;
-    /**
-     * The file contents
-     */
-    file: unknown;
-} | (RESTPatchAPIChannelMessageJSONBody & {
-    /**
-     * The file contents
-     */
-    file: unknown;
-});
-/**
- * https://discord.com/developers/docs/resources/channel#edit-message
- */
-export declare type RESTPatchAPIChannelMessageResult = APIMessage;
-/**
- * https://discord.com/developers/docs/resources/channel#delete-message
- */
-export declare type RESTDeleteAPIChannelMessageResult = never;
-/**
- * https://discord.com/developers/docs/resources/channel#bulk-delete-messages
- */
-export interface RESTPostAPIChannelMessagesBulkDeleteJSONBody {
-    /**
-     * An array of message ids to delete (2-100)
-     */
-    messages: Snowflake[];
+export declare const enum MessageType {
+    Default = 0,
+    RecipientAdd = 1,
+    RecipientRemove = 2,
+    Call = 3,
+    ChannelNameChange = 4,
+    ChannelIconChange = 5,
+    ChannelPinnedMessage = 6,
+    GuildMemberJoin = 7,
+    UserPremiumGuildSubscription = 8,
+    UserPremiumGuildSubscriptionTier1 = 9,
+    UserPremiumGuildSubscriptionTier2 = 10,
+    UserPremiumGuildSubscriptionTier3 = 11,
+    ChannelFollowAdd = 12,
+    GuildDiscoveryDisqualified = 14,
+    GuildDiscoveryRequalified = 15,
+    GuildDiscoveryGracePeriodInitialWarning = 16,
+    GuildDiscoveryGracePeriodFinalWarning = 17,
+    Reply = 19,
+    ApplicationCommand = 20,
+    GuildInviteReminder = 22
 }
 /**
- * https://discord.com/developers/docs/resources/channel#bulk-delete-messages
+ * https://discord.com/developers/docs/resources/channel#message-object-message-activity-structure
  */
-export declare type RESTPostAPIChannelMessagesBulkDeleteResult = never;
-/**
- * https://discord.com/developers/docs/resources/channel#edit-channel-permissions
- */
-export interface RESTPutAPIChannelPermissionJSONBody {
+export interface APIMessageActivity {
     /**
-     * The bitwise value of all allowed permissions
+     * Type of message activity
+     *
+     * See https://discord.com/developers/docs/resources/channel#message-object-message-activity-types
+     */
+    type: MessageActivityType;
+    /**
+     * `party_id` from a Rich Presence event
+     *
+     * See https://discord.com/developers/docs/rich-presence/how-to#updating-presence-update-presence-payload-fields
+     */
+    party_id?: string;
+}
+/**
+ * https://discord.com/developers/docs/resources/channel#message-object-message-reference-structure
+ */
+export interface APIMessageReference {
+    /**
+     * ID of the originating message
+     */
+    message_id?: Snowflake;
+    /**
+     * ID of the originating message's channel
+     */
+    channel_id: Snowflake;
+    /**
+     * ID of the originating message's guild
+     */
+    guild_id?: Snowflake;
+}
+/**
+ * https://discord.com/developers/docs/resources/channel#message-object-message-activity-types
+ */
+export declare const enum MessageActivityType {
+    Join = 1,
+    Spectate = 2,
+    Listen = 3,
+    JoinRequest = 5
+}
+/**
+ * https://discord.com/developers/docs/resources/channel#message-object-message-flags
+ */
+export declare const enum MessageFlags {
+    /**
+     * This message has been published to subscribed channels (via Channel Following)
+     */
+    Crossposted = 1,
+    /**
+     * This message originated from a message in another channel (via Channel Following)
+     */
+    IsCrosspost = 2,
+    /**
+     * Do not include any embeds when serializing this message
+     */
+    SuppressEmbeds = 4,
+    /**
+     * The source message for this crosspost has been deleted (via Channel Following)
+     */
+    SourceMessageDeleted = 8,
+    /**
+     * This message came from the urgent message system
+     */
+    Urgent = 16,
+    /**
+     * This message is only visible to the user who invoked the Interaction
+     */
+    Ephemeral = 64,
+    /**
+     * This message is an Interaction Response and the bot is "thinking"
+     */
+    Loading = 128
+}
+/**
+ * https://discord.com/developers/docs/resources/channel#followed-channel-object
+ */
+export interface APIFollowedChannel {
+    /**
+     * Source channel id
+     */
+    channel_id: Snowflake;
+    /**
+     * Created target webhook id
+     */
+    webhook_id: Snowflake;
+}
+/**
+ * https://discord.com/developers/docs/resources/channel#reaction-object-reaction-structure
+ */
+export interface APIReaction {
+    /**
+     * Times this emoji has been used to react
+     */
+    count: number;
+    /**
+     * Whether the current user reacted using this emoji
+     */
+    me: boolean;
+    /**
+     * Emoji information
+     *
+     * See https://discord.com/developers/docs/resources/emoji#emoji-object
+     */
+    emoji: APIPartialEmoji;
+}
+/**
+ * https://discord.com/developers/docs/resources/channel#overwrite-object-overwrite-structure
+ */
+export interface APIOverwrite {
+    /**
+     * Role or user id
+     */
+    id: Snowflake;
+    /**
+     * Either 0 (role) or 1 (member)
+     *
+     * {@link OverwriteType}
+     */
+    type: OverwriteType;
+    /**
+     * Permission bit set
+     *
+     * See https://discord.com/developers/docs/topics/permissions#permissions-bitwise-permission-flags
      *
      * See https://en.wikipedia.org/wiki/Bit_field
      */
     allow: Permissions;
     /**
-     * The bitwise value of all disallowed permissions
+     * Permission bit set
+     *
+     * See https://discord.com/developers/docs/topics/permissions#permissions-bitwise-permission-flags
      *
      * See https://en.wikipedia.org/wiki/Bit_field
      */
     deny: Permissions;
-    /**
-     * `0` for a role or `1` for a member
-     */
-    type: OverwriteType;
+}
+export declare const enum OverwriteType {
+    Role = 0,
+    Member = 1
 }
 /**
- * https://discord.com/developers/docs/resources/channel#edit-channel-permissions
+ * https://discord.com/developers/docs/resources/channel#embed-object-embed-structure
+ *
+ * Length limit: 6000 characters
  */
-export declare type RESTPutAPIChannelPermissionResult = never;
-/**
- * https://discord.com/developers/docs/resources/channel#get-channel-invites
- */
-export declare type RESTGetAPIChannelInvitesResult = APIExtendedInvite[];
-/**
- * https://discord.com/developers/docs/resources/channel#create-channel-invite
- */
-export interface RESTPostAPIChannelInviteJSONBody {
+export interface APIEmbed {
     /**
-     * Duration of invite in seconds before expiry, or 0 for never
+     * Title of embed
      *
-     * @default 86400 (24 hours)
+     * Length limit: 256 characters
      */
-    max_age?: number;
+    title?: string;
     /**
-     * Max number of uses or 0 for unlimited
+     * Type of embed (always "rich" for webhook embeds)
      *
-     * @default 0
+     * @deprecated *Embed types should be considered deprecated and might be removed in a future API version*
+     *
+     * See https://discord.com/developers/docs/resources/channel#embed-object-embed-types
      */
-    max_uses?: number;
+    type?: EmbedType;
     /**
-     * Whether this invite only grants temporary membership
+     * Description of embed
+     *
+     * Length limit: 4096 characters
+     */
+    description?: string;
+    /**
+     * URL of embed
+     */
+    url?: string;
+    /**
+     * Timestamp of embed content
+     */
+    timestamp?: string;
+    /**
+     * Color code of the embed
+     */
+    color?: number;
+    /**
+     * Footer information
+     *
+     * See https://discord.com/developers/docs/resources/channel#embed-object-embed-footer-structure
+     */
+    footer?: APIEmbedFooter;
+    /**
+     * Image information
+     *
+     * See https://discord.com/developers/docs/resources/channel#embed-object-embed-image-structure
+     */
+    image?: APIEmbedImage;
+    /**
+     * Thumbnail information
+     *
+     * See https://discord.com/developers/docs/resources/channel#embed-object-embed-thumbnail-structure
+     */
+    thumbnail?: APIEmbedThumbnail;
+    /**
+     * Video information
+     *
+     * See https://discord.com/developers/docs/resources/channel#embed-object-embed-video-structure
+     */
+    video?: APIEmbedVideo;
+    /**
+     * Provider information
+     *
+     * See https://discord.com/developers/docs/resources/channel#embed-object-embed-provider-structure
+     */
+    provider?: APIEmbedProvider;
+    /**
+     * Author information
+     *
+     * See https://discord.com/developers/docs/resources/channel#embed-object-embed-author-structure
+     */
+    author?: APIEmbedAuthor;
+    /**
+     * Fields information
+     *
+     * Length limit: 25 field objects
+     *
+     * See https://discord.com/developers/docs/resources/channel#embed-object-embed-field-structure
+     */
+    fields?: APIEmbedField[];
+}
+/**
+ * https://discord.com/developers/docs/resources/channel#embed-object-embed-types
+ * @deprecated *Embed types should be considered deprecated and might be removed in a future API version*
+ */
+export declare const enum EmbedType {
+    /**
+     * Generic embed rendered from embed attributes
+     */
+    Rich = "rich",
+    /**
+     * Image embed
+     */
+    Image = "image",
+    /**
+     * Video embed
+     */
+    Video = "video",
+    /**
+     * Animated gif image embed rendered as a video embed
+     */
+    GIFV = "gifv",
+    /**
+     * Article embed
+     */
+    Article = "article",
+    /**
+     * Link embed
+     */
+    Link = "link"
+}
+/**
+ * https://discord.com/developers/docs/resources/channel#embed-object-embed-thumbnail-structure
+ */
+export interface APIEmbedThumbnail {
+    /**
+     * Source url of thumbnail (only supports http(s) and attachments)
+     */
+    url?: string;
+    /**
+     * A proxied url of the thumbnail
+     */
+    proxy_url?: string;
+    /**
+     * Height of thumbnail
+     */
+    height?: number;
+    /**
+     * Width of thumbnail
+     */
+    width?: number;
+}
+/**
+ * https://discord.com/developers/docs/resources/channel#embed-object-embed-video-structure
+ */
+export interface APIEmbedVideo {
+    /**
+     * Source url of video
+     */
+    url?: string;
+    /**
+     * Height of video
+     */
+    height?: number;
+    /**
+     * Width of video
+     */
+    width?: number;
+}
+/**
+ * https://discord.com/developers/docs/resources/channel#embed-object-embed-image-structure
+ */
+export interface APIEmbedImage {
+    /**
+     * Source url of image (only supports http(s) and attachments)
+     */
+    url?: string;
+    /**
+     * A proxied url of the image
+     */
+    proxy_url?: string;
+    /**
+     * Height of image
+     */
+    height?: number;
+    /**
+     * Width of image
+     */
+    width?: number;
+}
+/**
+ * https://discord.com/developers/docs/resources/channel#embed-object-embed-provider-structure
+ */
+export interface APIEmbedProvider {
+    /**
+     * Name of provider
+     */
+    name?: string;
+    /**
+     * URL of provider
+     */
+    url?: string;
+}
+/**
+ * https://discord.com/developers/docs/resources/channel#embed-object-embed-author-structure
+ */
+export interface APIEmbedAuthor {
+    /**
+     * Name of author
+     *
+     * Length limit: 256 characters
+     */
+    name?: string;
+    /**
+     * URL of author
+     */
+    url?: string;
+    /**
+     * URL of author icon (only supports http(s) and attachments)
+     */
+    icon_url?: string;
+    /**
+     * A proxied url of author icon
+     */
+    proxy_icon_url?: string;
+}
+/**
+ * https://discord.com/developers/docs/resources/channel#embed-object-embed-footer-structure
+ */
+export interface APIEmbedFooter {
+    /**
+     * Footer text
+     *
+     * Length limit: 2048 characters
+     */
+    text: string;
+    /**
+     * URL of footer icon (only supports http(s) and attachments)
+     */
+    icon_url?: string;
+    /**
+     * A proxied url of footer icon
+     */
+    proxy_icon_url?: string;
+}
+/**
+ * https://discord.com/developers/docs/resources/channel#embed-object-embed-field-structure
+ */
+export interface APIEmbedField {
+    /**
+     * Name of the field
+     *
+     * Length limit: 256 characters
+     */
+    name: string;
+    /**
+     * Value of the field
+     *
+     * Length limit: 1024 characters
+     */
+    value: string;
+    /**
+     * Whether or not this field should display inline
+     */
+    inline?: boolean;
+}
+/**
+ * https://discord.com/developers/docs/resources/channel#attachment-object-attachment-structure
+ */
+export interface APIAttachment {
+    /**
+     * Attachment id
+     */
+    id: Snowflake;
+    /**
+     * Name of file attached
+     */
+    filename: string;
+    /**
+     * The attachment's media type
+     *
+     * See https://en.wikipedia.org/wiki/Media_type
+     */
+    content_type?: string;
+    /**
+     * Size of file in bytes
+     */
+    size: number;
+    /**
+     * Source url of file
+     */
+    url: string;
+    /**
+     * A proxied url of file
+     */
+    proxy_url: string;
+    /**
+     * Height of file (if image)
+     */
+    height?: number | null;
+    /**
+     * Width of file (if image)
+     */
+    width?: number | null;
+}
+/**
+ * https://discord.com/developers/docs/resources/channel#channel-mention-object-channel-mention-structure
+ */
+export interface APIChannelMention {
+    /**
+     * ID of the channel
+     */
+    id: Snowflake;
+    /**
+     * ID of the guild containing the channel
+     */
+    guild_id: Snowflake;
+    /**
+     * The type of channel
+     *
+     * See https://discord.com/developers/docs/resources/channel#channel-object-channel-types
+     */
+    type: ChannelType;
+    /**
+     * The name of the channel
+     */
+    name: string;
+}
+/**
+ * https://discord.com/developers/docs/resources/channel#allowed-mentions-object-allowed-mention-types
+ */
+export declare const enum AllowedMentionsTypes {
+    /**
+     * Controls @everyone and @here mentions
+     */
+    Everyone = "everyone",
+    /**
+     * Controls role mentions
+     */
+    Role = "roles",
+    /**
+     * Controls user mentions
+     */
+    User = "users"
+}
+/**
+ * https://discord.com/developers/docs/resources/channel#allowed-mentions-object-allowed-mentions-structure
+ */
+export interface APIAllowedMentions {
+    /**
+     * An array of allowed mention types to parse from the content
+     *
+     * See https://discord.com/developers/docs/resources/channel#allowed-mentions-object-allowed-mention-types
+     */
+    parse?: AllowedMentionsTypes[];
+    /**
+     * Array of role_ids to mention (Max size of 100)
+     */
+    roles?: Snowflake[];
+    /**
+     * Array of user_ids to mention (Max size of 100)
+     */
+    users?: Snowflake[];
+    /**
+     * 	For replies, whether to mention the author of the message being replied to (default false)
      *
      * @default false
      */
-    temporary?: boolean;
+    replied_user?: boolean;
+}
+/**
+ * https://discord.com/developers/docs/interactions/message-components#component-object
+ */
+export interface APIBaseMessageComponent<T extends ComponentType> {
     /**
-     * If true, don't try to reuse a similar invite
-     * (useful for creating many unique one time use invites)
+     * The type of the component
+     */
+    type: T;
+}
+/**
+ * https://discord.com/developers/docs/interactions/message-components#component-types
+ */
+export declare const enum ComponentType {
+    /**
+     * Action Row component
+     */
+    ActionRow = 1,
+    /**
+     * Button component
+     */
+    Button = 2,
+    /**
+     * Select Menu component
+     */
+    SelectMenu = 3
+}
+/**
+ * https://discord.com/developers/docs/interactions/message-components#action-rows
+ */
+export interface APIActionRowComponent extends APIBaseMessageComponent<ComponentType.ActionRow> {
+    /**
+     * The components in the ActionRow
+     */
+    components: Exclude<APIMessageComponent, APIActionRowComponent>[];
+}
+/**
+ * https://discord.com/developers/docs/interactions/message-components#buttons
+ */
+interface APIButtonComponentBase<Style extends ButtonStyle> extends APIBaseMessageComponent<ComponentType.Button> {
+    /**
+     * The label to be displayed on the button
+     */
+    label?: string;
+    /**
+     * The style of the button
+     */
+    style: Style;
+    /**
+     * The emoji to display to the left of the text
+     */
+    emoji?: APIMessageComponentEmoji;
+    /**
+     * The status of the button
+     */
+    disabled?: boolean;
+}
+export interface APIMessageComponentEmoji {
+    /**
+     * Emoji id
+     */
+    id?: Snowflake;
+    /**
+     * Emoji name
+     */
+    name?: string;
+    /**
+     * Whether this emoji is animated
+     */
+    animated?: boolean;
+}
+export interface APIButtonComponentWithCustomId extends APIButtonComponentBase<ButtonStyle.Primary | ButtonStyle.Secondary | ButtonStyle.Success | ButtonStyle.Danger> {
+    /**
+     * The custom_id to be sent in the interaction when clicked
+     */
+    custom_id: string;
+}
+export interface APIButtonComponentWithURL extends APIButtonComponentBase<ButtonStyle.Link> {
+    /**
+     * The URL to direct users to when clicked for Link buttons
+     */
+    url: string;
+}
+export declare type APIButtonComponent = APIButtonComponentWithCustomId | APIButtonComponentWithURL;
+/**
+ * https://discord.com/developers/docs/interactions/message-components#button-object-button-styles
+ */
+export declare const enum ButtonStyle {
+    Primary = 1,
+    Secondary = 2,
+    Success = 3,
+    Danger = 4,
+    Link = 5
+}
+/**
+ * https://discord.com/developers/docs/interactions/message-components#select-menus
+ */
+export interface APISelectMenuComponent extends APIBaseMessageComponent<ComponentType.SelectMenu> {
+    /**
+     * A developer-defined identifier for the select menu, max 100 characters
+     */
+    custom_id: string;
+    /**
+     * The choices in the select, max 25
+     */
+    options: APISelectMenuOption[];
+    /**
+     * Custom placeholder text if nothing is selected, max 100 characters
+     */
+    placeholder?: string;
+    /**
+     * The minimum number of items that must be chosen; min 0, max 25
+     *
+     * @default 1
+     */
+    min_values?: number;
+    /**
+     * The maximum number of items that can be chosen; max 25
+     *
+     * @default 1
+     */
+    max_values?: number;
+    /**
+     * Disable the select
      *
      * @default false
      */
-    unique?: boolean;
-    /**
-     * The type of target for this voice channel invite
-     *
-     * See https://discord.com/developers/docs/resources/invite#invite-object-invite-target-types
-     */
-    target_type?: InviteTargetType;
-    /**
-     * The id of the user whose stream to display for this invite
-     * - Required if `target_type` is 1
-     * - The user must be streaming in the channel
-     */
-    target_user_id?: Snowflake;
-    /**
-     * The id of the embedded application to open for this invite
-     * - Required if `target_type` is 2
-     * - The application must have the `EMBEDDED` flag
-     */
-    target_application_id?: Snowflake;
+    disabled?: boolean;
 }
 /**
- * https://discord.com/developers/docs/resources/channel#create-channel-invite
+ * https://discord.com/developers/docs/interactions/message-components#select-menu-object-select-option-structure
  */
-export declare type RESTPostAPIChannelInviteResult = APIExtendedInvite;
-/**
- * https://discord.com/developers/docs/resources/channel#delete-channel-permission
- */
-export declare type RESTDeleteAPIChannelPermissionResult = never;
-/**
- * https://discord.com/developers/docs/resources/channel#follow-news-channel
- */
-export interface RESTPostAPIChannelFollowersJSONBody {
+export interface APISelectMenuOption {
     /**
-     * ID of target channel
+     * The user-facing name of the option (max 25 chars)
      */
-    webhook_channel_id: Snowflake;
+    label: string;
+    /**
+     * The dev-defined value of the option (max 100 chars)
+     */
+    value: string;
+    /**
+     * An additional description of the option (max 50 chars)
+     */
+    description?: string;
+    /**
+     * The emoji to display to the left of the option
+     */
+    emoji?: APIMessageComponentEmoji;
+    /**
+     * Whether this option should be already-selected by default
+     */
+    default?: boolean;
 }
 /**
- * https://discord.com/developers/docs/resources/channel#follow-news-channel
+ * https://discord.com/developers/docs/interactions/message-components#message-components
  */
-export declare type RESTPostAPIChannelFollowersResult = APIFollowedChannel;
-/**
- * https://discord.com/developers/docs/resources/channel#trigger-typing-indicator
- */
-export declare type RESTPostAPIChannelTypingResult = never;
-/**
- * https://discord.com/developers/docs/resources/channel#get-pinned-messages
- */
-export declare type RESTGetAPIChannelPinsResult = APIMessage[];
-/**
- * https://discord.com/developers/docs/resources/channel#add-pinned-channel-message
- */
-export declare type RESTPutAPIChannelPinResult = never;
-/**
- * https://discord.com/developers/docs/resources/channel#delete-pinned-channel-message
- */
-export declare type RESTDeleteAPIChannelPinResult = never;
-/**
- * https://discord.com/developers/docs/resources/channel#group-dm-add-recipient
- */
-export interface RESTPutAPIChannelRecipientJSONBody {
-    /**
-     * Access token of a user that has granted your app the `gdm.join` scope
-     */
-    access_token: string;
-    /**
-     * Nickname of the user being added
-     */
-    nick?: string;
-}
-/**
- * https://discord.com/developers/docs/resources/channel#group-dm-add-recipient
- */
-export declare type RESTPutAPIChannelRecipientResult = unknown;
-/**
- * https://discord.com/developers/docs/resources/channel#group-dm-remove-recipient
- */
-export declare type RESTDeleteAPIChannelRecipientResult = unknown;
+export declare type APIMessageComponent = APIActionRowComponent | APIButtonComponent | APISelectMenuComponent;
+export {};
 //# sourceMappingURL=channel.d.ts.map
