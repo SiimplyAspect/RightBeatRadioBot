@@ -1,5 +1,5 @@
 "use strict";
-// This file exports all the types available in the recommended API version
+// This file exports all the types available in the recommended voice gateway version
 // Thereby, things MAY break in the future. Try sticking to imports from a specific version
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
@@ -12,5 +12,5 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-__exportStar(require("./v9/index"), exports);
+__exportStar(require("./v4"), exports);
 //# sourceMappingURL=index.js.map
